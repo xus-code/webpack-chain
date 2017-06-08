@@ -1,5 +1,5 @@
 import test from 'ava';
-import Config from '../src/Config';
+import { Chain } from '../src/Chain';
 import { validate } from 'webpack';
 
 class StringifyPlugin {
@@ -12,74 +12,58 @@ class StringifyPlugin {
   }
 }
 
-test('is ChainedMap', t => {
-  const config = new Config();
-
-  config.set('a', 'alpha');
-
-  t.is(config.store.get('a'), 'alpha');
-});
-
-test('shorthand methods', t => {
-  const config = new Config();
-  const obj = {};
-
-  config.shorthands.map(method => {
-    obj[method] = 'alpha';
-    t.is(config[method]('alpha'), config);
-  });
-
-  t.deepEqual(config.entries(), obj);
-});
-
 test('node', t => {
-  const config = new Config();
+  const config = Chain();
   const instance = config.node
     .set('__dirname', 'mock')
     .set('__filename', 'mock')
     .end();
 
   t.is(instance, config);
-  t.deepEqual(config.node.entries(), { __dirname: 'mock', __filename: 'mock' });
+  t.deepEqual(config.node.toConfig(), { __dirname: 'mock', __filename: 'mock' });
 });
 
 test('entry', t => {
-  const config = new Config();
+  const config = Chain();
 
   config.entry('index')
-    .add('babel-polyfill')
-    .add('src/index.js');
+    .push('babel-polyfill')
+    .push('src/index.js');
 
   t.true(config.entryPoints.has('index'));
-  t.deepEqual(config.entryPoints.get('index').values(), ['babel-polyfill', 'src/index.js']);
+  t.deepEqual(config.entryPoints.get('index').toArray(), ['babel-polyfill', 'src/index.js']);
 });
 
 test('plugin empty', t => {
-  const config = new Config();
+  const config = Chain();
   const instance = config.plugin('stringify').use(StringifyPlugin).end();
 
   t.is(instance, config);
   t.true(config.plugins.has('stringify'));
-  t.deepEqual(config.plugins.get('stringify').get('args'), []);
+  t.deepEqual(config.plugins.get('stringify').args.toConfig(), []);
 });
 
 test('plugin with args', t => {
-  const config = new Config();
+  const config = Chain();
 
-  config.plugin('stringify').use(StringifyPlugin, ['alpha', 'beta']);
+  config.plugin('stringify')
+    .use(StringifyPlugin)
+    .args
+      .push('alpha')
+      .push('beta');
 
   t.true(config.plugins.has('stringify'));
-  t.deepEqual(config.plugins.get('stringify').get('args'), ['alpha', 'beta']);
+  t.deepEqual(config.plugins.get('stringify').args.toConfig(), ['alpha', 'beta']);
 });
 
 test('toConfig empty', t => {
-  const config = new Config();
+  const config = Chain();
 
   t.deepEqual(config.toConfig(), {});
 });
 
 test('toConfig with values', t => {
-  const config = new Config();
+  const config = Chain();
 
   config
     .output
@@ -95,12 +79,12 @@ test('toConfig with values', t => {
     .module
       .rule('compile')
         .include
-          .add('alpha')
-          .add('beta')
+          .push('alpha')
+          .push('beta')
           .end()
         .exclude
-          .add('alpha')
-          .add('beta')
+          .push('alpha')
+          .push('beta')
           .end()
         .post()
         .pre()
@@ -134,16 +118,16 @@ test('toConfig with values', t => {
 });
 
 test('validate empty', t => {
-  const config = new Config();
+  const config = Chain();
   const errors = validate(config.toConfig());
 
   t.is(errors.length, 1);
 });
 
 test('validate with entry', t => {
-  const config = new Config();
+  const config = Chain();
 
-  config.entry('index').add('src/index.js');
+  config.entry('index').push('src/index.js');
 
   const errors = validate(config.toConfig());
 
@@ -151,12 +135,12 @@ test('validate with entry', t => {
 });
 
 test('validate with values', t => {
-  const config = new Config();
+  const config = Chain();
 
   config
     .entry('index')
-      .add('babel-polyfill')
-      .add('src/index.js')
+      .push('babel-polyfill')
+      .push('src/index.js')
       .end()
     .output
       .path('/build')
@@ -171,12 +155,12 @@ test('validate with values', t => {
     .module
       .rule('compile')
         .include
-          .add('alpha')
-          .add('beta')
+          .push('alpha')
+          .push('beta')
           .end()
         .exclude
-          .add('alpha')
-          .add('beta')
+          .push('alpha')
+          .push('beta')
           .end()
         .post()
         .pre()

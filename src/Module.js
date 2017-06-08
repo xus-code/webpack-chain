@@ -1,52 +1,27 @@
-const ChainedMap = require('./ChainedMap');
-const ChainedSet = require('./ChainedSet');
-const Rule = require('./Rule');
+const { ChainableOrderedMap, ChainableList } = require('./mutable');
+const rule = require('./Rule');
 
-module.exports = class extends ChainedMap {
-  constructor(parent) {
-    super(parent);
-    this.rules = new ChainedMap(this);
-    this.noParse = new ChainedSet(this);
-  }
+module.exports = parent => {
+  const module = ChainableOrderedMap(parent);
+  const rules = ChainableOrderedMap(module);
 
-  rule(name) {
-    if (!this.rules.has(name)) {
-      this.rules.set(name, new Rule(this));
+  module
+    .assoc('rules', rules)
+    .assoc('noParse', ChainableList(module));
+
+  Object.assign(rules, {
+    toConfig() {
+      return rules.toArray().map(rule => rule.toConfig());
     }
+  });
 
-    return this.rules.get(name);
-  }
+  return Object.assign(module, {
+    rule(name) {
+      if (!module.rules.has(name)) {
+        module.rules.set(name, rule(module));
+      }
 
-  toConfig() {
-    return this.clean(Object.assign(this.entries() || {}, {
-      rules: this.rules.values().map(r => r.toConfig()),
-      noParse: this.noParse.values()
-    }));
-  }
-
-  merge(obj) {
-    Object
-      .keys(obj)
-      .forEach(key => {
-        const value = obj[key];
-
-        switch (key) {
-          case 'rule': {
-            return Object
-              .keys(value)
-              .forEach(name => this.rule(name).merge(value[name]));
-          }
-
-          case 'noParse': {
-            return this.noParse.merge(value);
-          }
-
-          default: {
-            this.set(key, value);
-          }
-        }
-      });
-
-    return this;
-  }
+      return module.rules.get(name);
+    }
+  });
 };

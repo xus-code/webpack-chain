@@ -1,68 +1,55 @@
-const ChainedMap = require('./ChainedMap');
-const ChainedSet = require('./ChainedSet');
+const { ChainableOrderedMap, ChainableList } = require('./mutable');
 const Use = require('./Use');
 
-module.exports = class extends ChainedMap {
-  constructor(parent) {
-    super(parent);
-    this.uses = new ChainedMap(this);
-    this.include = new ChainedSet(this);
-    this.exclude = new ChainedSet(this);
-    this.extend(['parser', 'test', 'enforce']);
-  }
+module.exports = parent => {
+  const rule = ChainableOrderedMap(parent, [
+    'enforce',
+    'issuer',
+    'parser',
+    'resourceQuery',
+    'test'
+  ]);
+  const uses = ChainableOrderedMap(rule);
 
-  use(name) {
-    if (!this.uses.has(name)) {
-      this.uses.set(name, new Use(this));
+  Object.assign(uses, {
+    toConfig() {
+      return uses.toArray().map(value => value.toConfig());
     }
+  });
 
-    return this.uses.get(name);
-  }
+  rule
+    .assoc('uses', uses)
+    .assoc('include', ChainableList(rule))
+    .assoc('exclude', ChainableList(rule));
 
-  pre() {
-    return this.enforce('pre');
-  }
+  return Object.assign(rule, {
+    __toConfig: rule.toConfig,
 
-  post() {
-    return this.enforce('post');
-  }
+    pre() {
+      return rule.enforce('pre');
+    },
 
-  toConfig() {
-    return this.clean(Object.assign(this.entries() || {}, {
-      include: this.include.values(),
-      exclude: this.exclude.values(),
-      use: this.uses.values().map(use => use.toConfig())
-    }));
-  }
+    post() {
+      return rule.enforce('post');
+    },
 
-  merge(obj) {
-    Object
-      .keys(obj)
-      .forEach(key => {
-        const value = obj[key];
+    use(name) {
+      if (!rule.uses.has(name)) {
+        rule.uses.set(name, Use(rule));
+      }
 
-        switch (key) {
-          case 'include':
-          case 'exclude': {
-            return this[key].merge(value);
-          }
+      return rule.uses.get(name);
+    },
 
-          case 'use': {
-            return Object
-              .keys(value)
-              .forEach(name => this.use(name).merge(value[name]));
-          }
+    toConfig() {
+      const config = rule.__toConfig();
 
-          case 'test': {
-            return this.test(value instanceof RegExp ? value : new RegExp(value));
-          }
+      if (config.uses) {
+        config.use = config.uses;
+        delete config.uses;
+      }
 
-          default: {
-            this.set(key, value);
-          }
-        }
-      });
-
-    return this;
-  }
+      return config;
+    }
+  });
 };

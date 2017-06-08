@@ -1,30 +1,11 @@
-const ChainedMap = require('./ChainedMap');
-const merge = require('deepmerge');
+const { ChainableOrderedMap } = require('./mutable');
 
-module.exports = class extends ChainedMap {
-  constructor(parent) {
-    super(parent);
-    this.extend(['loader', 'options']);
-  }
+module.exports = parent => {
+  const use = ChainableOrderedMap(parent, ['loader', 'options']);
 
-  tap(f) {
-    this.options(f(this.get('options')));
-    return this;
-  }
-
-  merge(obj) {
-    if (obj.loader) {
-      this.loader(obj.loader);
+  return Object.assign(use, {
+    tap(f) {
+      return use.options(f(use.get('options')));
     }
-
-    if (obj.options) {
-      this.options(merge(this.store.get('options') || {}, obj.options));
-    }
-
-    return this;
-  }
-
-  toConfig() {
-    return this.clean(this.entries() || {});
-  }
+  });
 };

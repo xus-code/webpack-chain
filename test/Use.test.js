@@ -3,25 +3,25 @@ import Use from '../src/Use';
 
 test('is Chainable', t => {
   const parent = { parent: true };
-  const use = new Use(parent);
+  const use = Use(parent);
 
   t.is(use.end(), parent);
 });
 
 test('shorthand methods', t => {
-  const use = new Use();
+  const use = Use();
   const obj = {};
 
-  use.shorthands.map(method => {
+  use.__setters.map(method => {
     obj[method] = 'alpha';
     t.is(use[method]('alpha'), use);
   });
 
-  t.deepEqual(use.entries(), obj);
+  t.deepEqual(use.toConfig(), obj);
 });
 
 test('tap', t => {
-  const use = new Use();
+  const use = Use();
 
   use
     .loader('babel-loader')
@@ -32,5 +32,5 @@ test('tap', t => {
     return { presets: ['beta'] };
   });
 
-  t.deepEqual(use.store.get('options'), { presets: ['beta'] });
+  t.deepEqual(use.get('options'), { presets: ['beta'] });
 });

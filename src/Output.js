@@ -1,32 +1,28 @@
-const ChainedMap = require('./ChainedMap');
+const { ChainableOrderedMap } = require('./mutable');
 
-module.exports = class extends ChainedMap {
-  constructor(parent) {
-    super(parent);
-    this.extend([
-      'chunkFilename',
-      'crossOriginLoading',
-      'filename',
-      'library',
-      'libraryTarget',
-      'devtoolFallbackModuleFilenameTemplate',
-      'devtoolLineToLine',
-      'devtoolModuleFilenameTemplate',
-      'hashFunction',
-      'hashDigest',
-      'hashDigestLength',
-      'hashSalt',
-      'hotUpdateChunkFilename',
-      'hotUpdateFunction',
-      'hotUpdateMainFilename',
-      'jsonpFunction',
-      'path',
-      'pathinfo',
-      'publicPath',
-      'sourceMapFilename',
-      'sourcePrefix',
-      'strictModuleExceptionHandling',
-      'umdNamedDefine'
-    ]);
-  }
-};
+module.exports = (parent) => ChainableOrderedMap(parent, [
+  'chunkFilename',
+  'chunkLoadTimeout',
+  'crossOriginLoading',
+  'devtoolFallbackModuleFilenameTemplate',
+  'devtoolLineToLine',
+  'devtoolModuleFilenameTemplate',
+  'filename',
+  'hashDigest',
+  'hashDigestLength',
+  'hashFunction',
+  'hashSalt',
+  'hotUpdateChunkFilename',
+  'hotUpdateFunction',
+  'hotUpdateMainFilename',
+  'jsonpFunction',
+  'library',
+  'libraryTarget',
+  'path',
+  'pathinfo',
+  'publicPath',
+  'sourceMapFilename',
+  'sourcePrefix',
+  'strictModuleExceptionHandling',
+  'umdNamedDefine'
+]);

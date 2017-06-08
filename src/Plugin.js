@@ -1,39 +1,18 @@
-const ChainedMap = require('./ChainedMap');
+const { ChainableOrderedMap, ChainableList } = require('./mutable');
 
-module.exports = class extends ChainedMap {
-  constructor(parent) {
-    super(parent);
-    this.extend(['init']);
+module.exports = parent => {
+  const plugin = ChainableOrderedMap(parent, ['init'])
+    .init((Plugin, args) => new Plugin(...args));
 
-    this.init((Plugin, args = []) => new Plugin(...args));
-  }
+  plugin.assoc('args', ChainableList(plugin));
 
-  use(plugin, args = []) {
-    return this
-      .set('plugin', plugin)
-      .set('args', args);
-  }
+  return Object.assign(plugin, {
+    use(Plugin) {
+      return plugin.set('plugin', Plugin);
+    },
 
-  tap(f) {
-    this.set('args', f(this.get('args') || []));
-    return this;
-  }
-
-  merge(obj) {
-    if (obj.plugin) {
-      this.set('plugin', obj.plugin);
+    toConfig() {
+      return plugin.get('init')(plugin.get('plugin'), plugin.get('args').toConfig());
     }
-
-    if (obj.args) {
-      this.set('args', obj.args);
-    }
-
-    return this;
-  }
-
-  toConfig() {
-    const init = this.get('init');
-
-    return init(this.get('plugin'), this.get('args'));
-  }
+  });
 };

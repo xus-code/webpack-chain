@@ -1,13 +1,8 @@
-const ChainedMap = require('./ChainedMap');
+const { ChainableOrderedMap } = require('./mutable');
 
-module.exports = class extends ChainedMap {
-  constructor(parent) {
-    super(parent);
-    this.extend([
-      'hints',
-      'maxEntrypointSize',
-      'maxAssetSize',
-      'assetFilter'
-    ]);
-  }
-};
+module.exports = (parent) => ChainableOrderedMap(parent, [
+  'hints',
+  'maxEntrypointSize',
+  'maxAssetSize',
+  'assetFilter'
+]);
